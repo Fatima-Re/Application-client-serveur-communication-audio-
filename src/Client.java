@@ -6,9 +6,11 @@ public class Client {
     private OutputStream out;
     private InputStream in;
     private static Audio audioModule = new Audio();
+    private NetworkController controller; // <- added
 
-    // CONSTRUCTEUR pour NetworkController
-    public Client(String host, int port) throws IOException {
+    // CONSTRUCTOR
+    public Client(String host, int port, NetworkController controller) throws IOException {
+        this.controller = controller; // save reference
         this.socket = new Socket(host, port);
         this.out = socket.getOutputStream();
         this.in = socket.getInputStream();
@@ -16,7 +18,7 @@ public class Client {
         System.out.println("Connecté au serveur " + host + ":" + port);
     }
 
-    // MÉTHODE manquante pour envoyer texte
+    // SEND TEXT
     public void sendMessage(String message) {
         try {
             out.write((message + "\n").getBytes());
@@ -26,7 +28,7 @@ public class Client {
         }
     }
 
-    // MÉTHODE manquante pour envoyer audio
+    // SEND AUDIO
     public void sendAudio(byte[] audioData) {
         if (audioData == null || audioData.length == 0) return;
 
@@ -39,7 +41,7 @@ public class Client {
         }
     }
 
-    // Thread pour recevoir les messages du serveur
+    // RECEIVE LOOP
     private void startReceiverThread() {
         Thread receiver = new Thread(() -> {
             try {
@@ -51,10 +53,22 @@ public class Client {
                     if (check.startsWith("[AUDIO]")) {
                         byte[] audioData = new byte[len - 7];
                         System.arraycopy(buffer, 7, audioData, 0, audioData.length);
-                        audioModule.playAudio(audioData);
+
+                        // 🔹 Update GUI via controller
+                        if (controller != null) {
+                            controller.onAudioReceived(audioData);
+                        } else {
+                            audioModule.playAudio(audioData); // fallback
+                        }
+
                     } else {
-                        String msg = new String(buffer, 0, len);
-                        System.out.println("Serveur : " + msg.trim());
+                        String msg = new String(buffer, 0, len).trim();
+                        System.out.println("Serveur : " + msg);
+
+                        // 🔹 Update GUI via controller
+                        if (controller != null) {
+                            controller.onMessageReceived(msg);
+                        }
                     }
                 }
             } catch (IOException e) {
@@ -64,20 +78,10 @@ public class Client {
         receiver.start();
     }
 
-    // Pour fermer la connexion
+    // DISCONNECT
     public void disconnect() {
         try {
             if (socket != null) socket.close();
         } catch (IOException e) { }
-    }
-
-    // MAIN original (peut être gardé ou supprimé)
-    public static void main(String[] args) {
-        try {
-            Client client = new Client("localhost", 5000);
-            // ... reste du code ...
-        } catch (IOException e) {
-            System.err.println("Erreur client : " + e.getMessage());
-        }
     }
 }
