@@ -53,7 +53,7 @@ public class YapChatGUI extends JFrame {
             setIconImage(new ImageIcon(imageURL).getImage());
         }
 
-        setTitle("YAP - Let's Get Yapping!");
+        setTitle("YAP - Let's Get Yappin!");
         setSize(800, 600);
         setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         setLayout(new BorderLayout());
