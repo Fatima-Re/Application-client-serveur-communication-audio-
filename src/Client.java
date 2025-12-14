@@ -18,65 +18,60 @@ public class Client {
         System.out.println("Connecté au serveur " + host + ":" + port);
     }
 
-    // SEND TEXT
-    public void sendMessage(String message) {
+    // Send text
+    public void sendMessage(String username, String message) {
         try {
-            out.write((message + "\n").getBytes());
-            out.flush();
+            DataOutputStream dos = new DataOutputStream(out);
+            dos.writeUTF("[TEXT]");
+            dos.writeUTF(username);
+            dos.writeUTF(message);
+            dos.flush();
         } catch (IOException e) {
             e.printStackTrace();
         }
     }
 
-    // SEND AUDIO
-    public void sendAudio(byte[] audioData) {
+    // Send audio
+    public void sendAudio(String username, byte[] audioData) {
         if (audioData == null || audioData.length == 0) return;
 
         try {
-            out.write("[AUDIO]".getBytes()); // identifier audio
-            out.write(audioData);
-            out.flush();
+            DataOutputStream dos = new DataOutputStream(out);
+            dos.writeUTF("[AUDIO]");
+            dos.writeUTF(username);
+            dos.writeInt(audioData.length);
+            dos.write(audioData);
+            dos.flush();
         } catch (IOException e) {
             e.printStackTrace();
         }
     }
-
-    // RECEIVE LOOP
     private void startReceiverThread() {
-        Thread receiver = new Thread(() -> {
+        new Thread(() -> {
             try {
-                byte[] buffer = new byte[8192];
-                int len;
-                while ((len = in.read(buffer)) != -1) {
-                    String check = new String(buffer, 0, Math.min(7, len));
+                DataInputStream dis = new DataInputStream(in);
+                while (true) {
+                    String type = dis.readUTF();
 
-                    if (check.startsWith("[AUDIO]")) {
-                        byte[] audioData = new byte[len - 7];
-                        System.arraycopy(buffer, 7, audioData, 0, audioData.length);
+                    if (type.equals("[TEXT]")) {
+                        String sender = dis.readUTF();
+                        String msg = dis.readUTF();
+                        if (controller != null) controller.onMessageReceived(sender, msg);
 
-                        // 🔹 Update GUI via controller
-                        if (controller != null) {
-                            controller.onAudioReceived(audioData);
-                        } else {
-                            audioModule.playAudio(audioData); // fallback
-                        }
-
-                    } else {
-                        String msg = new String(buffer, 0, len).trim();
-                        System.out.println("Serveur : " + msg);
-
-                        // 🔹 Update GUI via controller
-                        if (controller != null) {
-                            controller.onMessageReceived(msg);
-                        }
+                    } else if (type.equals("[AUDIO]")) {
+                        String sender = dis.readUTF();
+                        int len = dis.readInt();
+                        byte[] audioData = new byte[len];
+                        dis.readFully(audioData);
+                        if (controller != null) controller.onAudioReceived(sender, audioData);
                     }
                 }
             } catch (IOException e) {
                 System.out.println("Connexion au serveur perdue");
             }
-        });
-        receiver.start();
+        }).start();
     }
+
 
     // DISCONNECT
     public void disconnect() {

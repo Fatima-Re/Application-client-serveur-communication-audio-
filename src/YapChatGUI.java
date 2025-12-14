@@ -5,28 +5,47 @@ import java.awt.event.*;
 import java.net.URL;
 
 public class YapChatGUI extends JFrame {
-    //Handling sending audios
-    public void appendVoiceMessage( String sender, byte[] audioData){
+    private void appendToChat(JComponent content, boolean isMe) {
 
-        JButton voiceMsg = new JButton("🎤 Voice message (click to play)");
+        JPanel container = new JPanel(new FlowLayout(
+                isMe ? FlowLayout.RIGHT : FlowLayout.LEFT, 0, 0
+        ));
+        container.setOpaque(false);
 
-        voiceMsg.addActionListener(e -> {
-            controller.playAudio(audioData); // 🔊 plays ONLY when clicked
-        });
+        MessageBubble bubble = new MessageBubble(content, isMe);
+        container.add(bubble);
 
-        if (sender.equals("YOU")) {
-            voiceMsg.setBackground(new Color(139, 94, 153));
-        } else {
-            voiceMsg.setBackground(new Color(255, 240, 255));
-        }
-
-        chatPanel.add(voiceMsg);
-        chatPanel.add(Box.createVerticalStrut(5));
+// Fixed vertical gap
+        container.setBorder(BorderFactory.createEmptyBorder(2, 0, 2, 0));
+        chatPanel.add(container);
         chatPanel.revalidate();
-
-        JScrollBar bar = scrollPane.getVerticalScrollBar();
-        bar.setValue(bar.getMaximum());
+        chatPanel.repaint();
     }
+
+
+    public void appendMessage(String sender, String message) {
+        boolean isMe = sender.equalsIgnoreCase("YOU");
+
+        JLabel textLabel = new JLabel(sender + ": " + message);
+        textLabel.setFont(new Font("Segoe UI", Font.PLAIN, 14));
+
+        appendToChat(textLabel, isMe);
+    }
+
+
+    //Handling sending audios
+    public void appendVoiceMessage(String sender, byte[] audioData) {
+        boolean isMe = sender.equalsIgnoreCase("YOU");
+
+        JButton playButton = new JButton("🎤Voice Message");
+        playButton.setFont(new Font("Segoe UI", Font.PLAIN, 12));
+        playButton.setFocusPainted(false);
+        playButton.addActionListener(e -> controller.playAudio(audioData));
+
+        appendToChat(playButton, isMe);
+    }
+
+
     // ===== UI COMPONENTS =====
     private JPanel chatPanel;
     private JTextField messageField;
@@ -144,7 +163,6 @@ public class YapChatGUI extends JFrame {
         String msg = messageField.getText().trim();
         if (!msg.isEmpty()) {
             controller.onSendText(msg);
-            appendMessage("YOU", msg);
             messageField.setText("");
         }
     }
@@ -156,21 +174,6 @@ public class YapChatGUI extends JFrame {
         voiceButton.setEnabled(true);
     }
 
-    public void appendMessage(String sender, String msg) {
-        JLabel label = new JLabel("<html><div style='padding:10px'>" + msg + "</div></html>");
-        label.setOpaque(true);
 
-        if (sender.equals("YOU")) {
-            label.setBackground(new Color(139, 94, 153));
-        } else {
-            label.setBackground(new Color(255, 240, 255));
-        }
 
-        chatPanel.add(label);
-        chatPanel.add(Box.createVerticalStrut(5));
-        chatPanel.revalidate();
-
-        JScrollBar bar = scrollPane.getVerticalScrollBar();
-        bar.setValue(bar.getMaximum());
-    }
 }
