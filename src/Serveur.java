@@ -15,7 +15,7 @@ public class Serveur {
 
             while (true) {
                 Socket socket = serverSocket.accept();
-                System.out.println("👤 Client connected: " + socket.getInetAddress());
+                System.out.println("👤 Client connected");
 
                 ClientHandler handler = new ClientHandler(socket);
                 clients.add(handler);
@@ -27,6 +27,7 @@ public class Serveur {
         }
     }
 
+    // ✅ BROADCAST RAW BYTES
     public static synchronized void broadcast(byte[] data, ClientHandler sender) {
         for (ClientHandler client : clients) {
             if (client != sender) {
@@ -41,6 +42,6 @@ public class Serveur {
 
     public static synchronized void removeClient(ClientHandler client) {
         clients.remove(client);
-        System.out.println("❌ Client disconnected");
+        System.out.println("❌ Client removed");
     }
 }

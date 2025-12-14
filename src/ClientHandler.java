@@ -14,6 +14,7 @@ public class ClientHandler implements Runnable {
         this.out = socket.getOutputStream();
     }
 
+    // ✅ SEND RAW BYTES
     public void send(byte[] data) throws Exception {
         out.write(data);
         out.flush();
@@ -33,7 +34,7 @@ public class ClientHandler implements Runnable {
                 Serveur.broadcast(data, this);
             }
         } catch (Exception e) {
-            System.out.println("⚠️ Client error");
+            System.out.println("⚠️ Client disconnected");
         } finally {
             Serveur.removeClient(this);
             try { socket.close(); } catch (Exception ignored) {}
