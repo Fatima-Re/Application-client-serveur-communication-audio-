@@ -13,8 +13,9 @@ public class NetworkController implements ChatController {
     @Override
     public void onConnect(String host, int port) {
         try {
-            this.client = new Client(host, port);
             gui.enableChat();
+            this.client = new Client(host, port, this); // pass 'this' to client
+
         } catch (IOException e) {
             System.err.println("Erreur de connexion: " + e.getMessage());
         }
