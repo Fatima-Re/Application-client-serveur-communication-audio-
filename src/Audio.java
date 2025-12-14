@@ -44,8 +44,10 @@ public class Audio {
             audioBuffer = new ByteArrayOutputStream();
             isRecording.set(true);
             
+        
             // Thread pour capturer l'audio en continu
             new Thread(this::captureAudioLoop).start();
+            
             
             return true;
             
