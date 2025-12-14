@@ -1,48 +1,46 @@
-import java.net.*;
-import java.io.*;
+import java.net.ServerSocket;
+import java.net.Socket;
+import java.util.ArrayList;
+import java.util.List;
 
 public class Serveur {
+
+    private static final List<ClientHandler> clients = new ArrayList<>();
+
     public static void main(String[] args) {
-        try(ServerSocket server = new ServerSocket(5000)){
+        int port = 5000;
 
-            System.out.println("En attente de connexion...");
-            Socket clientSocket = server.accept();
-            System.out.println("Client connecté !");
+        try (ServerSocket serverSocket = new ServerSocket(port)) {
+            System.out.println("✅ Server running on port " + port);
 
-            // Flux bytenon
-            InputStream in = clientSocket.getInputStream();
-            OutputStream out = clientSocket.getOutputStream();
+            while (true) {
+                Socket socket = serverSocket.accept();
+                System.out.println("👤 Client connected: " + socket.getInetAddress());
 
-            // Lecture clavier (pour envoyer des données)
-            BufferedReader keyboard = new BufferedReader(new InputStreamReader(System.in));
+                ClientHandler handler = new ClientHandler(socket);
+                clients.add(handler);
+                new Thread(handler).start();
+            }
 
-            // Thread d'envoi (écriture vers client)
-            Thread sender = new Thread(() -> {
-                String message;
-                try{
-                    while((message = keyboard.readLine()) != null){
-                        out.write((message + "\n").getBytes()); // envoyer sous forme de bytes
-                        out.flush();
-                    }
-                }catch(IOException e){ e.printStackTrace(); }
-            });
-            sender.start();
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
 
-            // Thread de réception (lecture depuis client)
-            Thread receiver = new Thread(() -> {
-                try{
-                    byte[] buffer = new byte[1024];
-                    int len;
-                    while((len = in.read(buffer)) != -1){
-                        String message = new String(buffer, 0, len);
-                        System.out.println("Client : " + message);
-                    }
-                }catch(IOException e){
-                    System.out.println("Erreur de lecture : " + e.getMessage());
+    public static synchronized void broadcast(byte[] data, ClientHandler sender) {
+        for (ClientHandler client : clients) {
+            if (client != sender) {
+                try {
+                    client.send(data);
+                } catch (Exception e) {
+                    e.printStackTrace();
                 }
-            });
-            receiver.start();
+            }
+        }
+    }
 
-        }catch(IOException e){ e.printStackTrace(); }
+    public static synchronized void removeClient(ClientHandler client) {
+        clients.remove(client);
+        System.out.println("❌ Client disconnected");
     }
 }
