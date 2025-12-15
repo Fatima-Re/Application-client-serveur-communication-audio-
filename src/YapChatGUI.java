@@ -5,6 +5,19 @@ import java.awt.event.*;
 import java.net.URL;
 
 public class YapChatGUI extends JFrame {
+   //make it autoscroll
+    private void autoScrollToBottom() {
+        SwingUtilities.invokeLater(() -> {
+            // This ensures the scroll pane moves to the very bottom
+            JScrollBar verticalBar = scrollPane.getVerticalScrollBar();
+            verticalBar.setValue(verticalBar.getMaximum());
+
+            // Force the viewport to update
+            scrollPane.getViewport().revalidate();
+            scrollPane.getViewport().repaint();
+        });
+    }
+    //all types of  messages handling
     private void appendToChat(JComponent content, boolean isMe) {
 
         JPanel container = new JPanel(new FlowLayout(
@@ -14,12 +27,13 @@ public class YapChatGUI extends JFrame {
 
         MessageBubble bubble = new MessageBubble(content, isMe);
         container.add(bubble);
-
 // Fixed vertical gap
         container.setBorder(BorderFactory.createEmptyBorder(2, 0, 2, 0));
         chatPanel.add(container);
         chatPanel.revalidate();
         chatPanel.repaint();
+        // Auto-scroll to bottom
+        autoScrollToBottom();
     }
 
 
@@ -37,14 +51,19 @@ public class YapChatGUI extends JFrame {
     public void appendVoiceMessage(String sender, byte[] audioData) {
         boolean isMe = sender.equalsIgnoreCase("YOU");
 
-        JButton playButton = new JButton("🎤Voice Message");
+        // Include username in the button text
+        JButton playButton = new JButton(sender + ": 🎤 Voice Message");
         playButton.setFont(new Font("Segoe UI", Font.PLAIN, 12));
         playButton.setFocusPainted(false);
         playButton.addActionListener(e -> controller.playAudio(audioData));
 
+        // Set button styling - ALWAYS BLACK TEXT for consistency
+        playButton.setForeground(Color.BLACK); // Always black text
+        playButton.setBackground(isMe ? new Color(139, 94, 153) : new Color(232, 210, 243));
+        playButton.setBorder(BorderFactory.createEmptyBorder(8, 12, 8, 12));
+
         appendToChat(playButton, isMe);
     }
-
 
     // ===== UI COMPONENTS =====
     private JPanel chatPanel;
